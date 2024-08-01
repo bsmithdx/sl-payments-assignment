@@ -15,13 +15,14 @@ class StripeTestClockService
         private readonly StripeClient $stripeClient,
         private readonly int $initialTimeout,
         private readonly int $backoffIncrement,
+        private readonly int $maxAttempts,
     )
     {}
 
     /**
      * @throws ApiErrorException
      */
-    private function advanceClock(string $clockId, int $timestamp): TestClock
+    public function advanceClock(string $clockId, int $timestamp): TestClock
     {
         return $this->stripeClient->testHelpers->testClocks->advance($clockId, [
             'frozen_time' => $timestamp,
@@ -31,21 +32,28 @@ class StripeTestClockService
     /**
      * @throws ApiErrorException
      */
-    private function getClock(string $clockId): TestClock
+    public function getClock(string $clockId): TestClock
     {
         return $this->stripeClient->testHelpers->testClocks->retrieve($clockId);
     }
 
     /**
      * @throws ApiErrorException
+     * @throws \Exception
      */
-    public function advanceClockAndWait(string $clockId, int $timestamp): TestClock
+    public function advanceClockAndPollUntilReady(string $clockId, int $timestamp): TestClock
     {
+        $attempts = 0;
         $currentTimeout = $this->initialTimeout;
         try {
             $clock = $this->advanceClock($clockId, $timestamp);
             //use an incrementing backoff time to poll the test clock until it's in a "ready" state after advancing
             while ($clock->status !== 'ready') {
+                //throw an exception if we hit the configured maximum number of attempts to poll for 'ready' clock
+                if ($attempts++ >= $this->maxAttempts) {
+                    Log::error('Max attempts reached while polling Stripe Test Clock');
+                    throw new \Exception('StripeTestClockService: max attempts exceeded');
+                }
                 sleep($currentTimeout);
                 $clock = $this->getClock($clockId);
                 $currentTimeout = $currentTimeout + $this->backoffIncrement;
@@ -56,6 +64,5 @@ class StripeTestClockService
             Log::error('Stripe Time Clock Exception: ' . $exception->getMessage(), ['exception' => $exception]);
             throw $exception;
         }
-
     }
 }

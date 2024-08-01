@@ -24,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
                 app(StripeClient::class),
                 config('services.stripe.test_clock.initial_timeout'),
                 config('services.stripe.test_clock.backoff_increment'),
+                config('services.stripe.test_clock.max_attempts'),
             );
         });
 

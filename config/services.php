@@ -7,6 +7,7 @@ return [
             'id' => env('STRIPE_TEST_CLOCK'),
             'initial_timeout' => 1,
             'backoff_increment' => 1,
+            'max_attempts' => 10,
         ],
     ],
 ];

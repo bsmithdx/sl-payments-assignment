@@ -24,6 +24,7 @@ class SubscriptionAnalysisService
         $data = [];
         //Stripe time clock is configured to start at 1704110400 (January 1st, 2024 @ 2:00PM GMT)
         $times = [
+            //TODO: generate timestamps from CarbonImmutable objects for more transparency
             1706796000, //February 1st, 2024 @ 2:00PM GMT
             1709301600, //March 1st, 2024 @ 2:00PM GMT
             1711980000, //April 1st, 2024 @ 2:00PM GMT
@@ -38,7 +39,7 @@ class SubscriptionAnalysisService
             1735740000, //January 1st, 2025 @ 2:00PM GMT
         ];
         foreach ($times as $time) {
-            $clock = $this->clockService->advanceClockAndWait($this->stripeTestClockId, $time);
+            $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $time);
             Log::info("Advanced Stripe Time Clock: {$clock->name} ({$clock->id})", [
                 'frozen_time' => $clock->frozen_time,
                 'status' => $clock->status,
