@@ -18,10 +18,13 @@ composer-install:
 	@$(DOCKER_COMPOSE) run --rm app composer install
 
 artisan:
-	@$(DOCKER_COMPOSE) run --rm app php artisan
+	@$(DOCKER_COMPOSE) run --rm app php artisan ${CMD}
 
 stripe-login:
 	@$(DOCKER_COMPOSE) run --rm app stripe login
+
+stripe-fixture:
+	@$(DOCKER_COMPOSE) run --rm app stripe fixtures fixtures/seed.json
 
 bash:
 	@$(DOCKER_COMPOSE) exec app /bin/bash

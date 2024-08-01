@@ -1,11 +1,20 @@
 {
     "fixtures": [
         {
+            "name": "test_clock_analysis",
+            "path": "/v1/test_helpers/test_clocks",
+            "method": "post",
+            "params": {
+                "frozen_time": "1704110400",
+                "name": "Subscription Analysis Test Clock"
+            }
+        },
+        {
             "name": "customer_diego",
             "path": "/v1/customers",
             "method": "post",
             "params": {
-                "test_clock": "${.env:STRIPE_TEST_CLOCK}",
+                "test_clock": "${test_clock_analysis:id}",
                 "name": "Mayra Rodriguez",
                 "email": "diego.rodriguez@example.com"
             }
@@ -23,7 +32,7 @@
             "path": "/v1/customers",
             "method": "post",
             "params": {
-                "test_clock": "${.env:STRIPE_TEST_CLOCK}",
+                "test_clock": "${test_clock_analysis:id}",
                 "name": "Santiago Fernandez",
                 "email": "santiago.fernandez@example.com"
             }
