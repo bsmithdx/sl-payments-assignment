@@ -2,25 +2,51 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Stripe;
 
-use App\Services\Stripe\StripeTestClockService;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
 
 class SubscriptionAnalysisService
 {
+    private $newCustomer;
+    private $newSubscription;
     public function __construct(
+        private readonly StripeCustomerService $customerService,
+        private readonly StripeSubscriptionService $subscriptionService,
         private readonly StripeTestClockService $clockService,
         private readonly string $stripeTestClockId,
+        private readonly string $newSubscriptionCouponId,
+        private readonly string $newSubscriptionPriceId,
+        private readonly string $upgradeSubscriptionPriceId,
     )
     {}
+
+    private function addDataToStripeBeforeAnalysis()
+    {
+        //Create new customer in Stripe
+        $this->newCustomer = $this->customerService->createCustomer(
+            'Brendan Smith',
+            'brendan.smith@example.com',
+            'pm_card_visa',
+            $this->stripeTestClockId,
+        );
+        //Create new subscription in Stripe
+        $this->newSubscription = $this->subscriptionService->createSubscription(
+            $this->newCustomer->id,
+            $this->newSubscriptionPriceId,
+            $this->newSubscriptionCouponId,
+            30,
+            'gbp',
+        );
+    }
 
     /**
      * @throws ApiErrorException
      */
     public function getAnalysisData(): array
     {
+        $this->addDataToStripeBeforeAnalysis();
         $data = [];
         //Stripe time clock is configured to start at 1704110400 (January 1st, 2024 @ 2:00PM GMT)
         $times = [
