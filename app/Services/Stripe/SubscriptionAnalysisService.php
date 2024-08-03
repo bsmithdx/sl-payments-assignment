@@ -45,20 +45,51 @@ class SubscriptionAnalysisService
             'pm_card_visa',
             $this->stripeTestClockId,
         );
-        //Create new subscription in Stripe
-        $newSubscription = $this->subscriptionService->createSubscription(
-            $newCustomer->id,
-            $pricesByLookupKey['monthly_crossclip_basic']->id,
-            $this->couponService->getCouponByName('10 Dollar Off')->id,
-            30,
-            'gbp',
-        );
-        //Set schedule to upgrade subscription based on timestamp and priceid
-        $this->subscriptionService->upgradeExistingSubscriptionWithSchedule(
-            $newSubscription->id,
-            $pricesByLookupKey['monthly_crossclip_premium']->id,
-            $this->startTime->addMonths(5)->setDay(15),
-        );
+        //The 30 day trial can lead to different results in the final table depending on the length of the month we start in
+        $trialEnds = $this->startTime->addDays(30);
+        //if starting Feb 1, 2024 then this should result in upgrading on the 15th of June (half-way through the "5th month")
+        $upgradeStartTime = $this->startTime->addMonths(4)->setDay(15);
+        $params = [
+            'customer' => $newCustomer->id,
+            'start_date' => 'now',
+            'end_behavior' => 'release',
+            'phases' => [
+                [
+                    'items' => [
+                        [
+                            'price' => $pricesByLookupKey['monthly_crossclip_basic']->id,
+                            'quantity' => 1,
+                        ],
+                    ],
+                    'currency' => 'gbp',
+                    'end_date' => $trialEnds->getTimestamp(),
+                    'trial_end' => $trialEnds->getTimestamp(),
+                ],
+                [
+                    'items' => [
+                        [
+                            'price' => $pricesByLookupKey['monthly_crossclip_basic']->id,
+                            'quantity' => 1,
+                        ],
+                    ],
+                    'currency' => 'gbp',
+                    'coupon' => $this->couponService->getCouponByName('5 Dollar Off for 3 Months')->id,
+                    'end_date' => $upgradeStartTime->getTimestamp(),
+                ],
+                [
+                    'proration_behavior' => 'always_invoice',
+                    'items' => [
+                        [
+                            'price' => $pricesByLookupKey['monthly_crossclip_premium']->id,
+                            'quantity' => 1,
+                        ],
+                    ],
+                    'currency' => 'gbp',
+                    'collection_method' => 'charge_automatically',
+                ],
+            ],
+        ];
+        $this->subscriptionService->createSubscriptionWithSchedule($params);
     }
 
     private function getAnalysisData()

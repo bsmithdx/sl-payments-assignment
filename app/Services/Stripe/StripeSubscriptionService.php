@@ -36,8 +36,6 @@ class StripeSubscriptionService
                     'price' => $priceId,
                 ],
             ],
-            //TODO: test if this parameter is required or not (either here or on the customer)
-            //'default_payment_method' => 'pm_card_visa',
         ];
         if ($couponId) {
             $params['coupon'] = $couponId;
@@ -54,37 +52,9 @@ class StripeSubscriptionService
     /**
      * @throws ApiErrorException
      */
-    public function upgradeExistingSubscriptionWithSchedule(string $subscriptionId, string $newPriceId, CarbonImmutable $upgradeStartTime): SubscriptionSchedule
+    public function createSubscriptionWithSchedule(array $params): SubscriptionSchedule
     {
-        $schedule = $this->client->subscriptionSchedules->create([
-            'from_subscription' => $subscriptionId,
-        ]);
 
-        $params = [
-            'phases' => [
-                [
-                   'items' => [
-                       [
-                           'price' => $schedule->phases[0]->items[0]->price,
-                           'quantity' => $schedule->phases[0]->items[0]->quantity,
-                       ],
-                   ],
-                    'start_date' => $schedule->phases[0]->start_date,
-                    'end_date' => $upgradeStartTime->getTimestamp(),
-                ],
-                [
-                    'proration_behavior' => 'always_invoice',
-                    'start_date' => $upgradeStartTime->getTimestamp(),
-                    'items' => [
-                        [
-                            'price' => $newPriceId,
-                            'quantity' => $schedule->phases[0]->items[0]->quantity,
-                        ],
-                    ],
-                    'collection_method' => 'charge_automatically',
-                ]
-            ]
-        ];
-        return $this->client->subscriptionSchedules->update($schedule->id, $params);
+        return $this->client->subscriptionSchedules->create($params);
     }
 }

@@ -32,6 +32,7 @@ class StripeCustomerService
         ];
         if ($paymentMethod) {
             $params['payment_method'] = $paymentMethod;
+            $params['invoice_settings'] = ['default_payment_method' => $paymentMethod];
         }
         if ($testClockId) {
             $params['test_clock'] = $testClockId;
