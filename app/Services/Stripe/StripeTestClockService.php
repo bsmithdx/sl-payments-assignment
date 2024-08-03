@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
+use Stripe\Collection;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Stripe\TestHelpers\TestClock;
@@ -39,14 +41,22 @@ class StripeTestClockService
 
     /**
      * @throws ApiErrorException
+     */
+    public function getAllClocks(): Collection
+    {
+        return $this->stripeClient->testHelpers->testClocks->all();
+    }
+
+    /**
+     * @throws ApiErrorException
      * @throws \Exception
      */
-    public function advanceClockAndPollUntilReady(string $clockId, int $timestamp): TestClock
+    public function advanceClockAndPollUntilReady(string $clockId, CarbonImmutable $newTime): TestClock
     {
         $attempts = 0;
         $currentTimeout = $this->initialTimeout;
         try {
-            $clock = $this->advanceClock($clockId, $timestamp);
+            $clock = $this->advanceClock($clockId, $newTime->getTimestamp());
             //use an incrementing backoff time to poll the test clock until it's in a "ready" state after advancing
             while ($clock->status !== 'ready') {
                 //throw an exception if we hit the configured maximum number of attempts to poll for 'ready' clock

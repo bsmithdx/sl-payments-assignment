@@ -11,6 +11,7 @@ use Stripe\Exception\ApiErrorException;
 
 class SubscriptionAnalysisService
 {
+    private string $stripeTestClockId;
     public function __construct(
         private readonly StripePriceService        $priceService,
         private readonly StripeCouponService       $couponService,
@@ -18,10 +19,15 @@ class SubscriptionAnalysisService
         private readonly StripeSubscriptionService $subscriptionService,
         private readonly StripeTestClockService    $clockService,
         private readonly StripeInvoiceService      $invoiceService,
-        private readonly string                    $stripeTestClockId,
         private readonly CarbonImmutable           $startTime,
     )
-    {}
+    {
+        $testClock = $this->clockService->getAllClocks()->first();
+        if (is_null($testClock)) {
+            throw new \Exception('No Stripe Test Clock found');
+        }
+        $this->stripeTestClockId = $testClock->id;
+    }
 
     private function addDataToStripeBeforeAnalysis()
     {
@@ -76,31 +82,20 @@ class SubscriptionAnalysisService
     /**
      * @throws ApiErrorException
      */
-    public function runAnalysis(): SubscriptionAnalysisDTO
+    public function runAnalysis(): array
     {
         $this->addDataToStripeBeforeAnalysis();
-        //Stripe time clock is configured to start at 1704110400 (January 1st, 2024 @ 2:00PM GMT)
-        $times = [
-            //TODO: generate timestamps from CarbonImmutable objects for more transparency
-            1706796000, //February 1st, 2024 @ 2:00PM GMT
-            1709301600, //March 1st, 2024 @ 2:00PM GMT
-            1711980000, //April 1st, 2024 @ 2:00PM GMT
-            1714572000, //May 1st, 2024 @ 2:00PM GMT
-            1717250400, //June 1st, 2024 @ 2:00PM GMT
-            1719842400, //July 1st, 2024 @ 2:00PM GMT
-            1722520800, //August 1st, 2024 @ 2:00PM GMT
-            1725199200, //September 1st, 2024 @ 2:00PM GMT
-            1727791200, //October 1st, 2024 @ 2:00PM GMT
-            1730469600, //November 1st, 2024 @ 2:00PM GMT
-            1733061600, //December 1st, 2024 @ 2:00PM GMT
-            1735740000, //January 1st, 2025 @ 2:00PM GMT
-        ];
-        foreach ($times as $time) {
-            $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $time);
+        //increment by one day to make sure all invoices end up finalized at the end
+        $newClockTime = $this->startTime->addDay();
+        $endClockTime = $this->startTime->addYear();
+        while ($newClockTime < $endClockTime) {
+            $newClockTime = $newClockTime->addMonth();
+            $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $newClockTime);
             Log::info("Advanced Stripe Time Clock: {$clock->name} ({$clock->id})", [
                 'frozen_time' => $clock->frozen_time,
                 'status' => $clock->status,
             ]);
+
         }
         return $this->getAnalysisData();
     }

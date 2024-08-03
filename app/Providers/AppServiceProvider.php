@@ -42,7 +42,6 @@ class AppServiceProvider extends ServiceProvider
                 app(StripeSubscriptionService::class),
                 app(StripeTestClockService::class),
                 app(StripeInvoiceService::class),
-                config('services.stripe.test_clock.id'),
                 CarbonImmutable::createFromTimestamp(config('services.stripe.subscription_analysis.start_time')),
             );
         });

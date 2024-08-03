@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\Stripe\StripeTestClockService;
+use Carbon\CarbonImmutable;
 use Tests\TestCase;
 use Mockery;
 use Stripe\StripeClient;
@@ -42,7 +43,7 @@ class StripeTestClockServiceTest extends TestCase
                 $testClock2,
             ]);
 
-        $clock = $partialService->advanceClockAndPollUntilReady('clock_1Pj6RjCeQ4FW3OFGGeVNFrrZ', 1709301600);
+        $clock = $partialService->advanceClockAndPollUntilReady('clock_1Pj6RjCeQ4FW3OFGGeVNFrrZ', CarbonImmutable::createFromTimestamp(1709301600));
         $this->assertSame('ready', $clock->status);
         $this->assertSame(1709301600, $clock->frozen_time);
     }
@@ -74,6 +75,6 @@ class StripeTestClockServiceTest extends TestCase
                 $testClock1,
             ]);
         $this->expectExceptionMessage('StripeTestClockService: max attempts exceeded');
-        $partialService->advanceClockAndPollUntilReady('clock_1Pj6RjCeQ4FW3OFGGeVNFrrZ', 1709301600);
+        $partialService->advanceClockAndPollUntilReady('clock_1Pj6RjCeQ4FW3OFGGeVNFrrZ', CarbonImmutable::createFromTimestamp(1709301600));
     }
 }
