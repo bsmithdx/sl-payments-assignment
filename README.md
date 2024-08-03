@@ -1,90 +1,38 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://cdn.streamlabs.com/static/imgs/identity/streamlabs-logo-thumb.png" alt="Streamlabs Kevin"></a></p>
+# Brendan's Notes
 
+### Steps to get local working
+1. access server via http://localhost:8080/public
+2. generate encryption key with `artisan key:generate`
+3. create empty sqlite file at `database/database.sqlite`
+4. Add `/database/migrations` directory with migration files from basic Laravel install
+5. run migrations with `artisan migrate`
 
-Thank you for choosing to invest your time in this assignment.  We recognize it’s difficult to find the time to complete a coding assignment, and we value your time and investment in this process with us.
-# Streamlabs Senior Payments Assignment
+### Assumptions/Decisions
+- I'm assuming that the generated report (from dynamic data in Stripe test account) and the creation of the new customer and subscription are independent implementations that could be triggered by separate commands. Obviously crating a new subscription should affect the output of the report since it will modify the data in the Stripe account.
+- I'm assuming that creating the customer, their subscription, and the mid-cycle proration (all through the API) should be handled as separate services in the backend. For the sake of this assignment I'll create a single command to execute these changes for testing the report.
+- I'm assuming that the mid-cycle upgrade will have proration applied immediately (vs at the end of the month) so the added invoiced amount will be added to the 5th month in the report.
+- It would be easiest to create the new customer, subscription, and upgrade (using stripe schedule) in the fixtures with the other data since then we'd have access to dynamically generated stripe ids like `${price_monthly_crossclip_basic:id}`. My assumption is that I'm required to create these through the API and it looks like the upgrade should occur when the data is advanced to the 5th month using the Test Clock rather than setting it up ahead of time using a subscription schedule with phases. As such I either need to pass the dynamic stripe ids through .env/config/command params or query the API for them.
+- In order to avoid setting up webhooks to detect when the time clock is advanced (which seemed outside the scope of this assignment) I will simply poll the API repeatedly after advancing the test clock until I know that it's "ready" again. That way I can advance the clock all the way through the simulation and generate the report in a single command and avoid having to keep track of any state locally (such as in the db) and only rely on the Stripe API for data.
+- NOTE: Depending on when the simulation starts you could have slightly different results in the table due to differences in the length of each month. For example the trial for the new customer is supposed to last for 30 days (instead of 1 month) so starting on January 1 would result in the first invoice occurring in January versus starting onn February 1st would result in the first invoice occurring in March.
 
-You've been tasked with creating an analysis for how subscriptions behave over the course of a year and the expected revenue from those subscriptions. 
+### Questions
+- How to handle projection of expected revenue for a subscription. Assuming that it's supposed to know about things like the 5th month upgrade, trials, and other time based events. Can this be done without relying on stripe test clock manipulation? or am I supposed to rely on test clock as the mechanism to "project" the earnings for each month.
 
-You will be assessing the estimated revenue for 3 different subscription products. You've been provided seed data for 3 different products, 2 existing customers and their subscriptions. 
+### Workplan
+- [x] Using the Stripe API, create a new customer with subscription
+  - [x] Create customer in Stripe via API service
+  - [x] Create subscription with schedule for customer via API service
+- [x] Advance Test Clock through year-long simulation
+  - [x] Create function to advance clock and poll api until clock is in 'ready' state
+  - [x] Loop on increasing start time and advance clock until it's past a year from start date
+- [ ] Return a table for each product that lists out a subscription per row.
+  - [ ] The columns should be the following: customer email, product name, ...months 1-12, lifetime value for subscription. The final row should contain usd totals for each month.
+  - [ ] Retrieve product/subscription/invoice data via Stripe API
+  - [ ] Transform product data from Stripe objects to report DTO via a new service
+  - [ ] Pull transformed data into command and use to build table (including row for totals)
+- [ ] Add screenshot to readme
+- [ ] Add instructions to run code and tests to readme
 
-## Requirements
-- Return a table for each product that lists out a subscription per row.
-- The columns should be the following: customer email, product name, ...months 1-12, lifetime value for subscription. The final row should contain usd totals for each month.
-- Using the Stripe API, create a new customer and subscribe them to the following:
-  - Price: `${price_monthly_crossclip_basic:id}`
-  - Coupon: `${coupon_5_off_3_months:id}`
-  - Trial: 30 days
-  - Currency: `gbp`
-- For your created subscription, during the 5th month perform a mid-cycle upgrade with proration on the 15th to the following:
-    - Price: `${price_monthly_crossclip_premium:id}`
-- **You can display these tables via HTML or command line output.**
-
-| Customer Email       | Product Name | {endOfMonth date} 1 | {endOfMonth} 2 | {endOfMonth} 3 | {endOfMonth} 4 | {endOfMonth} 5 | {endOfMonth} 6 | {endOfMonth} 7 | {endOfMonth} 8 | {endOfMonth} 9 | {endOfMonth} 10 | {endOfMonth} 11 | {endOfMonth} 12 | Life Time Value |
-|----------------------|--------------|---------------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|-----------------|-----------------|-----------------|-----------------|
-| john.doe@example.com | Product A    | $10                 | $10            | $10            | $10            | $10            | $10            | $10            | $10            | $0             | $0              | $0              | $0              | $80             |
-| jane.smith@example.com | Product A    | $15                 | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15             | $15             | $15             | $180            |
-| **Totals**           |              | **$25**             | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$15**        | **$15**         | **$15**         | **$15**         | **$260**        |
-
-
-| Customer Email       | Product Name | {endOfMonth} 1 | {endOfMonth} 2 | {endOfMonth} 3 | {endOfMonth} 4 | {endOfMonth} 5 | {endOfMonth} 6 | {endOfMonth} 7 | {endOfMonth} 8 | {endOfMonth} 9 | {endOfMonth} 10 | {endOfMonth} 11 | {endOfMonth} 12 | Life Time Value |
-|----------------------|--------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|-----------------|-----------------|-----------------|-----------------|
-| john.doe@example.com | Product B    | $10            | $10            | $10            | $10            | $10            | $10            | $10            | $10            | $0             | $0              | $0              | $0              | $80             |
-| jane.smith@example.com | Product B    | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15             | $15             | $15             | $180            |
-| **Totals**           |              | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$15**        | **$15**         | **$15**         | **$15**         | **$260**        |
-
-
-| Customer Email       | Product Name | {endOfMonth} 1 | {endOfMonth} 2 | {endOfMonth} 3 | {endOfMonth} 4 | {endOfMonth} 5 | {endOfMonth} 6 | {endOfMonth} 7 | {endOfMonth} 8 | {endOfMonth} 9 | {endOfMonth} 10 | {endOfMonth} 11 | {endOfMonth} 12 | Life Time Value |
-|----------------------|--------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|----------------|-----------------|-----------------|-----------------|-----------------|
-| john.doe@example.com | Product C    | $10            | $10            | $10            | $10            | $10            | $10            | $10            | $10            | $0             | $0              | $0              | $0              | $80             |
-| jane.smith@example.com | Product C    | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15            | $15             | $15             | $15             | $180            |
-| **Totals**           |              | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$25**        | **$15**        | **$15**         | **$15**         | **$15**         | **$260**        |
-
-
-## Guiding Philosophy
-
-The assignment should take about 4 hours to complete. We want to see a well-modeled, working solution that shows that you can write code and read directions.
-
-We are NOT
-
-- going to throw any "gotchas" at you or your submission,
-- testing for your ability to suss out edge cases, or
-- trying to trick you.
-
-Keep it simple! Please do NOT implement extra features that we don't ask for.   
-
-## Stack
-At Streamlabs we mainly make use of PHP, Laravel, Vue, React, TypeScript, MySQL. Please make use of Laravel & PHP for this assignment so we know you are familiar with our backend stack.
-
-## Prerequisites
-
-### Stripe
-You will be heavily working with stripe for this assignment. You will need to create a stripe account.
-
-Stripe Concepts:
-- [Stripe CLI](https://docs.stripe.com/cli)
-- [Stripe Fixtures](https://docs.stripe.com/cli/fixtures)
-- [Stripe Test Clocks and Simulations](https://docs.stripe.com/billing/testing/test-clocks/api-advanced-usage)
-- [Stripe API - Customers, Subscriptions, Products, Prices, and Coupons](https://docs.stripe.com/api?lang=php)
-
-## Getting Started
-- Fork this repository
-- We've included a docker setup for you to get started though it's not required.
-  - make up
-  - make composer-install
-  - make stripe-login
-- Create a new stripe account
-- Use the stripe CLI to login and authorize to newly created account
-- Create a [stripe test clock](https://dashboard.stripe.com/test/billing/subscriptions/test-clocks) to simulate time
-- Once you've added your test clock you can use stripe cli to run your fixture. Fixture is located at fixtures/seed.json
-  - The fixture will populate data into your stripe account
-
-> **Warning:** You'll likely have to create multiple test clocks and seed data multiple times. This is normal and expected. While all data will be constrained by each test clock you can delete all stripe data by going to the [Stripe Developers](https://dashboard.stripe.com/test/developers) page and selecting "Delete all test data" option at the bottom of the page.
-
-## Documentation & Thought Process
-The code is to be published on a public github repository for our team to access. Make sure that we can see your progress in your commit history, a single commit is not enough.
-
-**Please include a README.md file that includes the following information:**
-
-- A screenshot of your final output
-- Instructions on how to run your code and any tests
+### Nice-to-haves/TODOs
+- Use an interface/repository/factory pattern to abstract getting data from Stripe API specifically (although this analysis is heavily dependant on stripe-specific features i.e. test clock)
+- Pull in external library like `moneyphp/money` to handle currencies and conversions
