@@ -22,7 +22,7 @@ class StripeCustomerService
     public function createCustomer(
         string $name,
         string $email,
-        ?string $defaultPaymentMethod = null,
+        ?string $paymentMethod = null,
         ?string $testClockId = null
     ): Customer
     {
@@ -30,8 +30,8 @@ class StripeCustomerService
             'name' => $name,
             'email' => $email,
         ];
-        if ($defaultPaymentMethod) {
-            $params['default_payment_method'] = $defaultPaymentMethod;
+        if ($paymentMethod) {
+            $params['payment_method'] = $paymentMethod;
         }
         if ($testClockId) {
             $params['test_clock'] = $testClockId;

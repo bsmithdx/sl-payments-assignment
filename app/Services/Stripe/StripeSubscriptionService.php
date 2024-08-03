@@ -25,14 +25,16 @@ class StripeSubscriptionService
         //only supporting a single price for now
         string $priceId,
         ?string $couponId = null,
-        ?int $trialDays = null,
+        ?int $trialPeriodDays = null,
         ?string $currency = null,
     ): Subscription
     {
         $params = [
             'customer' => $customerId,
             'items' => [
-                'price' => $priceId
+                [
+                    'price' => $priceId,
+                ],
             ],
             //TODO: test if this parameter is required or not (either here or on the customer)
             //'default_payment_method' => 'pm_card_visa',
@@ -40,8 +42,8 @@ class StripeSubscriptionService
         if ($couponId) {
             $params['coupon'] = $couponId;
         }
-        if ($trialDays) {
-            $params['trial_days'] = $trialDays;
+        if ($trialPeriodDays) {
+            $params['trial_period_days'] = $trialPeriodDays;
         }
         if ($currency) {
             $params['currency'] = $currency;

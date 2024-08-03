@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
-use App\DTO\SubscriptionAnalysis\SubscriptionAnalysisDTO;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
@@ -50,14 +49,14 @@ class SubscriptionAnalysisService
         $newSubscription = $this->subscriptionService->createSubscription(
             $newCustomer->id,
             $pricesByLookupKey['monthly_crossclip_basic']->id,
-            $this->couponService->getCouponByName('10 Dollar Off'),
+            $this->couponService->getCouponByName('10 Dollar Off')->id,
             30,
             'gbp',
         );
         //Set schedule to upgrade subscription based on timestamp and priceid
         $this->subscriptionService->upgradeExistingSubscriptionWithSchedule(
-            $pricesByLookupKey['monthly_crossclip_premium']->id,
             $newSubscription->id,
+            $pricesByLookupKey['monthly_crossclip_premium']->id,
             $this->startTime->addMonths(5)->setDay(15),
         );
     }
