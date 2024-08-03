@@ -26,7 +26,7 @@
   - [x] Create function to advance clock and poll api until clock is in 'ready' state
   - [x] Loop on increasing start time and advance clock until it's past a year from start date
 - [ ] Return a table for each product that lists out a subscription per row.
-  - [ ] The columns should be the following: customer email, product name, ...months 1-12, lifetime value for subscription. The final row should contain usd totals for each month.
+  - [x] The columns should be the following: customer email, product name, ...months 1-12, lifetime value for subscription. The final row should contain usd totals for each month.
   - [ ] Retrieve product/subscription/invoice data via Stripe API
   - [ ] Transform product data from Stripe objects to report DTO via a new service
   - [ ] Pull transformed data into command and use to build table (including row for totals)

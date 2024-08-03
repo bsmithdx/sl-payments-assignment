@@ -28,7 +28,10 @@ class SubscriptionAnalysisService
         $this->stripeTestClockId = $testClock->id;
     }
 
-    private function addDataToStripeBeforeAnalysis()
+    /**
+     * @throws ApiErrorException
+     */
+    public function addDataToStripeBeforeAnalysis(): void
     {
         $prices = $this->priceService->getPricesByLookupKeys([
             'monthly_crossclip_basic',
@@ -92,7 +95,28 @@ class SubscriptionAnalysisService
         $this->subscriptionService->createSubscriptionWithSchedule($params);
     }
 
-    private function getAnalysisData()
+    /**
+     * @throws ApiErrorException
+     */
+    public function runAnalysis(): void
+    {
+        //increment by one day to make sure all invoices end up finalized at the end
+        $newClockTime = $this->startTime->addDay();
+        $endClockTime = $this->startTime->addYear();
+        while ($newClockTime < $endClockTime) {
+            $newClockTime = $newClockTime->addMonth();
+            $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $newClockTime);
+            Log::info("Advanced Stripe Time Clock: {$clock->name} ({$clock->id})", [
+                'frozen_time' => $clock->frozen_time,
+                'status' => $clock->status,
+            ]);
+        }
+    }
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function getAnalysisData(): array
     {
         //get all customers associated with the test clock
         $customers = $this->customerService->getAllCustomers($this->stripeTestClockId);
@@ -106,27 +130,5 @@ class SubscriptionAnalysisService
             //TODO: combine invoices and process into all data necessary for table
         }
         return [];
-
-    }
-
-    /**
-     * @throws ApiErrorException
-     */
-    public function runAnalysis(): array
-    {
-        $this->addDataToStripeBeforeAnalysis();
-        //increment by one day to make sure all invoices end up finalized at the end
-        $newClockTime = $this->startTime->addDay();
-        $endClockTime = $this->startTime->addYear();
-        while ($newClockTime < $endClockTime) {
-            $newClockTime = $newClockTime->addMonth();
-            $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $newClockTime);
-            Log::info("Advanced Stripe Time Clock: {$clock->name} ({$clock->id})", [
-                'frozen_time' => $clock->frozen_time,
-                'status' => $clock->status,
-            ]);
-
-        }
-        return $this->getAnalysisData();
     }
 }

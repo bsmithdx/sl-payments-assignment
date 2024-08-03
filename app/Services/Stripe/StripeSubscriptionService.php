@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
-use Carbon\CarbonImmutable;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Stripe\Subscription;
