@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
+use Carbon\CarbonImmutable;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Stripe\Subscription;
+use Stripe\SubscriptionSchedule;
 
 class StripeSubscriptionService
 {
@@ -45,5 +47,42 @@ class StripeSubscriptionService
             $params['currency'] = $currency;
         }
         return $this->client->subscriptions->create($params);
+    }
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function upgradeExistingSubscriptionWithSchedule(string $subscriptionId, string $newPriceId, CarbonImmutable $upgradeStartTime): SubscriptionSchedule
+    {
+        $schedule = $this->client->subscriptionSchedules->create([
+            'from_subscription' => $subscriptionId,
+        ]);
+
+        $params = [
+            'phases' => [
+                [
+                   'items' => [
+                       [
+                           'price' => $schedule->phases[0]->items[0]->price,
+                           'quantity' => $schedule->phases[0]->items[0]->quantity,
+                       ],
+                   ],
+                    'start_date' => $schedule->phases[0]->start_date,
+                    'end_date' => $upgradeStartTime->getTimestamp(),
+                ],
+                [
+                    'proration_behavior' => 'always_invoice',
+                    'start_date' => $upgradeStartTime->getTimestamp(),
+                    'items' => [
+                        [
+                            'price' => $newPriceId,
+                            'quantity' => $schedule->phases[0]->items[0]->quantity,
+                        ],
+                    ],
+                    'collection_method' => 'charge_automatically',
+                ]
+            ]
+        ];
+        return $this->client->subscriptionSchedules->update($schedule->id, $params);
     }
 }

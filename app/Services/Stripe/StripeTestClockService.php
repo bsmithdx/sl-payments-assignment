@@ -52,6 +52,7 @@ class StripeTestClockService
                 //throw an exception if we hit the configured maximum number of attempts to poll for 'ready' clock
                 if ($attempts++ >= $this->maxAttempts) {
                     Log::error('Max attempts reached while polling Stripe Test Clock');
+                    //TODO: create custom exception
                     throw new \Exception('StripeTestClockService: max attempts exceeded');
                 }
                 sleep($currentTimeout);

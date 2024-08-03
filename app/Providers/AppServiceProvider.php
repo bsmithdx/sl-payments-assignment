@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\Services\Stripe\StripeCouponService;
 use App\Services\Stripe\StripeCustomerService;
+use App\Services\Stripe\StripeInvoiceService;
+use App\Services\Stripe\StripePriceService;
 use App\Services\Stripe\StripeSubscriptionService;
 use App\Services\Stripe\StripeTestClockService;
 use App\Services\Stripe\SubscriptionAnalysisService;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
@@ -32,13 +36,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(SubscriptionAnalysisService::class, function(Application $app) {
             return new SubscriptionAnalysisService(
+                app(StripePriceService::class),
+                app(StripeCouponService::class),
                 app(StripeCustomerService::class),
                 app(StripeSubscriptionService::class),
                 app(StripeTestClockService::class),
+                app(StripeInvoiceService::class),
                 config('services.stripe.test_clock.id'),
-                config('services.stripe.subscription_analysis.new_subscription_coupon_id'),
-                config('services.stripe.subscription_analysis.new_subscription_price_id'),
-                config('services.stripe.subscription_analysis.upgrade_subscription_price_id'),
+                CarbonImmutable::createFromTimestamp(config('services.stripe.subscription_analysis.start_time')),
             );
         });
     }

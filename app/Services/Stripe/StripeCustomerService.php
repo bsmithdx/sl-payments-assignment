@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
+use Stripe\Collection;
 use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -36,5 +37,20 @@ class StripeCustomerService
             $params['test_clock'] = $testClockId;
         }
         return $this->client->customers->create($params);
+    }
+
+    /**
+     * @return Collection<Customer>
+     * @throws \Stripe\Exception\ApiErrorException
+     */
+    public function getAllCustomers(?string $testClockId = null): Collection
+    {
+        $params = [
+            'limit' => 100,
+        ];
+        if ($testClockId) {
+            $params['test_clock'] = $testClockId;
+        }
+        return $this->client->customers->all($params);
     }
 }
