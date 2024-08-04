@@ -15,12 +15,12 @@ class ProductInvoiceAnalysisTransformer
         //add one row to display data for each customer
         foreach ($productData->getCustomerData() as $customer) {
             $filledCustomerMonthTotals = $this->fillEmptyMonthsFromStartTime($customer->getMonthTotals(), $startTime);
-            $return[] = array_merge([$customer->customerName, $productData->getProductName()], $filledCustomerMonthTotals, [$customer->getOverallTotal()]);
+            $return[] = array_merge([$customer->customerName, $productData->getProductName()], $filledCustomerMonthTotals, [$this->formatUsd($customer->getOverallTotal())]);
         }
         //add row to display product totals
         $filledProductMonthTotals = $this->fillEmptyMonthsFromStartTime($productData->getProductTotalsByMonth(), $startTime);
         $productTotalsRow = array_merge(['Totals', ''], $filledProductMonthTotals);
-        $productTotalsRow[] = $productData->getProductOverallTotal();
+        $productTotalsRow[] = $this->formatUsd($productData->getProductOverallTotal());
         $return[] = $productTotalsRow;
 
         return $return;
@@ -36,13 +36,19 @@ class ProductInvoiceAnalysisTransformer
         for ($i = 0; $i < 12; $i++) {
             $currentMonthEndTime = $currentMonthTime->endOfMonth()->getTimestamp();
             if (!isset($dataByMonth[$currentMonthEndTime])) {
-                $filledArray[$currentMonthEndTime] = 0;
+                $filledArray[$currentMonthEndTime] = $this->formatUsd(0);
             } else {
-                $filledArray[$currentMonthEndTime] = $dataByMonth[$currentMonthEndTime];
+                $filledArray[$currentMonthEndTime] = $this->formatUsd($dataByMonth[$currentMonthEndTime]);
             }
             $currentMonthTime = $currentMonthTime->addMonth();
         }
 
         return $filledArray;
+    }
+
+    private function formatUsd(int $amount): string
+    {
+        //TODO: pull in moneyphp library to handle currency formatting through injected Formatter class
+        return '$' . $amount / 100;
     }
 }

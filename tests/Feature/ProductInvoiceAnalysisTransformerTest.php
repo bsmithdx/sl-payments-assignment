@@ -24,7 +24,7 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
 
         $invoice2 = new Invoice();
         $invoice2->amount_paid = 1000;
-        $invoice2->currency = 'usd';
+        $invoice2->currency = 'gbp';
         $invoice2->created = CarbonImmutable::parse('March 1st, 2024 at 12PM UTC')->getTimestamp();
         $invoice2->customer = 'cus_NeZwdNtLEOFuiJ';
         $invoice2->customer_name = 'Jane Doe';
@@ -38,14 +38,14 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
 
         $invoice4 = new Invoice();
         $invoice4->amount_paid = 3000;
-        $invoice4->currency = 'usd';
+        $invoice4->currency = 'gbp';
         $invoice4->created = CarbonImmutable::parse('December 1st, 2024 at 12PM UTC')->getTimestamp();
         $invoice4->customer = 'cus_NeZwdNtLEOFuiJ';
         $invoice4->customer_name = 'Jane Doe';
 
         $invoice5 = new Invoice();
         $invoice5->amount_paid = 500;
-        $invoice5->currency = 'usd';
+        $invoice5->currency = 'gbp';
         $invoice5->created = CarbonImmutable::parse('January 1st, 2025 at 12PM UTC')->getTimestamp();
         $invoice5->customer = 'cus_NeZwdNtLEOFuiJ';
         $invoice5->customer_name = 'Jane Doe';
@@ -81,53 +81,53 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
             [
                 'Brendan Smith',
                 'Product Name',
-                2500,
-                0,
-                1500,
-                0,
-                0,
-                0,
-                0,
-                0,
-                3500,
-                0,
-                0,
-                0,
-                7500,
+                '$25',
+                '$0',
+                '$15',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$35',
+                '$0',
+                '$0',
+                '$0',
+                '$75',
             ],
             [
                 'Jane Doe',
                 'Product Name',
-                0,
-                1000,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                3000,
-                500,
-                4500,
+                '$0',
+                '$13',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$39',
+                '$6.5',
+                '$58.5',
             ],
             [
                 'Totals',
                 '',
-                2500,
-                1000,
-                1500,
-                0,
-                0,
-                0,
-                0,
-                0,
-                3500,
-                0,
-                3000,
-                500,
-                12000,
+                '$25',
+                '$13',
+                '$15',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$0',
+                '$35',
+                '$0',
+                '$39',
+                '$6.5',
+                '$133.5',
             ],
         ], $outputArray);
     }

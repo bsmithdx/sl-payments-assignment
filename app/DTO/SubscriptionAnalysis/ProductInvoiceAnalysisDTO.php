@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\SubscriptionAnalysis;
 
+use App\Util\ExchangeRate;
 use Carbon\CarbonImmutable;
 use Stripe\Invoice;
 
@@ -37,11 +38,14 @@ class ProductInvoiceAnalysisDTO
         return $this->productOverallTotal;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function addInvoiceData(Invoice $invoice): void
     {
         //setting key to int value of month so need to map to month name on display since not necessarily in order i.e. 1-12
         $monthEndTimestamp = CarbonImmutable::createFromTimestamp($invoice->created)->endOfMonth()->getTimestamp();
-        $convertedAmount = strtolower($invoice->currency) !== 'usd' ? $this->convertAmountToUsd($invoice->currency, $invoice->amount_paid) : $invoice->amount_paid;
+        $convertedAmount = $this->convertAmountToUsd($invoice->currency, $invoice->amount_paid);
         if (!isset($this->customerData[$invoice->customer])) {
             $this->customerData[$invoice->customer] = new CustomerInvoiceAnalysisDTO($invoice->customer, $invoice->customer_name);
         }
@@ -59,7 +63,12 @@ class ProductInvoiceAnalysisDTO
 
     public function convertAmountToUsd(string $currency, int $amount): int
     {
-        //TODO: handle currency conversion
-        return $amount;
+        //TODO: pull in moneyphp library to handle currency conversion through injected Converter class (avoids dealing with floats)
+        switch (strtoupper($currency)) {
+            case 'USD': return (int) round($amount);
+            case 'GBP': return (int) round(ExchangeRate::$GBP_TO_USD * $amount);
+            case 'EUR': return (int) round(ExchangeRate::$EUR_TO_USD * $amount);
+            default: throw new \Exception('Unsupported currency used');
+        }
     }
 }

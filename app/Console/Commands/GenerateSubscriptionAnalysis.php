@@ -73,6 +73,9 @@ class GenerateSubscriptionAnalysis extends Command
         } catch (ApiErrorException $exception) {
             Log::error($exception->getMessage(), ['exception' => $exception]);
             $this->error('There was an error with the Stripe API (see logs for details)');
+        } catch (\Exception $exception) {
+            Log::error($exception->getMessage(), ['exception' => $exception]);
+            $this->error('There was an error running this command (see logs for details)');
         }
 
     }
