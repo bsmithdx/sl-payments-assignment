@@ -25,7 +25,7 @@ class GenerateSubscriptionAnalysis extends Command
      *
      * @var string
      */
-    protected $description = 'Run a simulation on Stripe subscription data and produce a report showing projected revenue by product over 12 months';
+    protected $description = 'Run analysis on Stripe subscription data and produce a report showing projected revenue by product over 12 months';
 
     public function __construct( private readonly CarbonImmutable $startTime)
     {
@@ -39,10 +39,10 @@ class GenerateSubscriptionAnalysis extends Command
 
         try {
             $this->info('Adding new Customer and Subscription data to Stripe');
-            //$analysisService->addDataToStripeBeforeAnalysis();
+            $analysisService->addDataToStripeBeforeAnalysis();
 
             $this->info('Advancing the Stripe Clock through the simulation');
-            //$analysisService->runAnalysis();
+            $analysisService->runAnalysis();
 
             $this->info('Generating data for analysis');
             $productData = $analysisService->getAnalysisData();

@@ -114,9 +114,8 @@ class SubscriptionAnalysisService
      */
     public function runAnalysis(): void
     {
-        //increment by one day to make sure all invoices end up finalized at the end
-        $newClockTime = $this->startTime->addDay();
-        $endClockTime = $this->startTime->addYear();
+        $newClockTime = $this->startTime;
+        $endClockTime = $this->startTime->addMonths(11)->endOfMonth();
         while ($newClockTime < $endClockTime) {
             $newClockTime = $newClockTime->addMonth();
             $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $newClockTime);
