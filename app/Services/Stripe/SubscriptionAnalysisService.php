@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Stripe;
 
+use App\DTO\SubscriptionAnalysis\ProductInvoiceAnalysisDTO;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
+use Stripe\Collection;
 use Stripe\Exception\ApiErrorException;
 
 class SubscriptionAnalysisService
@@ -127,8 +129,24 @@ class SubscriptionAnalysisService
         //apparently Stripe won't let you retrieve all invoices without providing a customerId so we'll have to loop through customers to get all invoices.
         foreach ($customerEmailsById as $customerId => $customerEmail) {
             $invoices = $this->invoiceService->getAllInvoicesForCustomer($customerId);
+            $productData = $this->transformProductDataFromStripeInvoices($invoices);
             //TODO: combine invoices and process into all data necessary for table
         }
         return [];
+    }
+
+    private function transformProductDataFromStripeInvoices(Collection $invoices): array
+    {
+        $productDTOs = [];
+        foreach ($invoices->data as $invoice) {
+            //TODO: determine product id from invoice
+            $productId = '';
+            $productName = '';
+            if (!isset($productDTOs[$productId])) {
+                $productDTOs[$productId] = new ProductInvoiceAnalysisDTO($productId, $productName);
+            }
+            $productDTOs[$productId]->addInvoiceData($invoice);
+        }
+        return $productDTOs;
     }
 }
