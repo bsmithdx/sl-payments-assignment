@@ -76,21 +76,38 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
         /** @var ProductInvoiceAnalysisTransformer $transformer */
         $transformer = app(ProductInvoiceAnalysisTransformer::class);
 
-        $outputArray = $transformer->transformDataToArrayForDisplay($data, 235423);
-
+        $outputArray = $transformer->transformDataToArrayForDisplay($data, CarbonImmutable::parse('February 2nd, 2024 at 12PM UTC')->getTimestamp());
         $this->assertSame([
             [
                 'Brendan Smith',
                 'Product Name',
                 2500,
+                0,
                 1500,
+                0,
+                0,
+                0,
+                0,
+                0,
                 3500,
+                0,
+                0,
+                0,
                 7500,
             ],
             [
                 'Jane Doe',
                 'Product Name',
+                0,
                 1000,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
                 3000,
                 500,
                 4500,
@@ -101,7 +118,13 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
                 2500,
                 1000,
                 1500,
+                0,
+                0,
+                0,
+                0,
+                0,
                 3500,
+                0,
                 3000,
                 500,
                 12000,

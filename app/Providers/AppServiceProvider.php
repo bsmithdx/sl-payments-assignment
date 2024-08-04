@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\GenerateSubscriptionAnalysis;
 use App\Services\Stripe\StripeCouponService;
 use App\Services\Stripe\StripeCustomerService;
 use App\Services\Stripe\StripeInvoiceService;
@@ -22,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $startTime = CarbonImmutable::createFromTimestamp(config('services.stripe.subscription_analysis.start_time'));
+
         $this->app->singleton(StripeClient::class, function(Application $app) {
             return new StripeClient(config('services.stripe.secret'));
         });
@@ -35,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->bind(SubscriptionAnalysisService::class, function(Application $app) {
+        $this->app->bind(SubscriptionAnalysisService::class, function(Application $app) use ($startTime) {
             return new SubscriptionAnalysisService(
                 app(StripePriceService::class),
                 app(StripeCouponService::class),
@@ -44,8 +47,12 @@ class AppServiceProvider extends ServiceProvider
                 app(StripeTestClockService::class),
                 app(StripeProductService::class),
                 app(StripeInvoiceService::class),
-                CarbonImmutable::createFromTimestamp(config('services.stripe.subscription_analysis.start_time')),
+                $startTime,
             );
+        });
+
+        $this->app->bind(GenerateSubscriptionAnalysis::class, function(Application $app) use ($startTime) {
+            return new GenerateSubscriptionAnalysis($startTime);
         });
     }
 

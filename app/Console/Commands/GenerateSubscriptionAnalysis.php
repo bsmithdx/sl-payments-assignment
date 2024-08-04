@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Services\SubscriptionAnalysis\SubscriptionAnalysisService;
+use App\Transformers\SubscriptionAnalysis\ProductInvoiceAnalysisTransformer;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
@@ -25,10 +27,14 @@ class GenerateSubscriptionAnalysis extends Command
      */
     protected $description = 'Run a simulation on Stripe subscription data and produce a report showing projected revenue by product over 12 months';
 
+    public function __construct( private readonly CarbonImmutable $startTime)
+    {
+        parent::__construct();
+    }
     /**
      * Execute the console command.
      */
-    public function handle(SubscriptionAnalysisService $analysisService)
+    public function handle(SubscriptionAnalysisService $analysisService, ProductInvoiceAnalysisTransformer $transformer)
     {
 
         try {
@@ -39,7 +45,8 @@ class GenerateSubscriptionAnalysis extends Command
             //$analysisService->runAnalysis();
 
             $this->info('Generating data for analysis');
-            $data = $analysisService->getAnalysisData();
+            $productData = $analysisService->getAnalysisData();
+
             $this->info('Displaying tables by product');
             $headers = [
               'Customer Email',
@@ -59,27 +66,10 @@ class GenerateSubscriptionAnalysis extends Command
               'Life Time Value',
             ];
 
-            $data = [
-              [
-                  'somneone@sasdfas.com',
-                  'new product',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-                  '$0',
-              ],
-            ];
-
-            $this->table($headers, $data);
+            foreach ($productData as $productDatum) {
+                $transformedData = $transformer->transformDataToArrayForDisplay($productDatum, $this->startTime->getTimestamp());
+                $this->table($headers, $transformedData);
+            }
         } catch (ApiErrorException $exception) {
             Log::error($exception->getMessage(), ['exception' => $exception]);
             $this->error('There was an error with the Stripe API (see logs for details)');
