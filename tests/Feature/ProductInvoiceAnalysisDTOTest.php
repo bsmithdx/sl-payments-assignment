@@ -1,0 +1,107 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\DTO\SubscriptionAnalysis\ProductInvoiceAnalysisDTO;
+use Carbon\CarbonImmutable;
+use Stripe\Invoice;
+use Tests\TestCase;
+
+class ProductInvoiceAnalysisDTOTest extends TestCase
+{
+    /**
+     * A basic feature test example.
+     */
+    public function testArrayOutput(): void
+    {
+        $invoice1 = new Invoice();
+        $invoice1->amount_paid = 2000;
+        $invoice1->currency = 'usd';
+        $invoice1->created = CarbonImmutable::parse('February 2nd, 2024 at 12PM UTC')->getTimestamp();
+        $invoice1->customer = 'cus_NeZwdNtLEOXuvB';
+        $invoice1->customer_name = 'Brendan Smith';
+
+        $invoice2 = new Invoice();
+        $invoice2->amount_paid = 1000;
+        $invoice2->currency = 'usd';
+        $invoice2->created = CarbonImmutable::parse('March 1st, 2024 at 12PM UTC')->getTimestamp();
+        $invoice2->customer = 'cus_NeZwdNtLEOFuiJ';
+        $invoice2->customer_name = 'Jane Doe';
+
+        $invoice3 = new Invoice();
+        $invoice3->amount_paid = 3500;
+        $invoice3->currency = 'usd';
+        $invoice3->created = CarbonImmutable::parse('October 3rd, 2024 at 12PM UTC')->getTimestamp();
+        $invoice3->customer = 'cus_NeZwdNtLEOXuvB';
+        $invoice3->customer_name = 'Brendan Smith';
+
+        $invoice4 = new Invoice();
+        $invoice4->amount_paid = 3000;
+        $invoice4->currency = 'usd';
+        $invoice4->created = CarbonImmutable::parse('December 1st, 2024 at 12PM UTC')->getTimestamp();
+        $invoice4->customer = 'cus_NeZwdNtLEOFuiJ';
+        $invoice4->customer_name = 'Jane Doe';
+
+        $invoice5 = new Invoice();
+        $invoice5->amount_paid = 500;
+        $invoice5->currency = 'usd';
+        $invoice5->created = CarbonImmutable::parse('January 1st, 2025 at 12PM UTC')->getTimestamp();
+        $invoice5->customer = 'cus_NeZwdNtLEOFuiJ';
+        $invoice5->customer_name = 'Jane Doe';
+
+        $invoice6 = new Invoice();
+        $invoice6->amount_paid = 500;
+        $invoice6->currency = 'usd';
+        $invoice6->created = CarbonImmutable::parse('February 15th, 2024 at 12PM UTC')->getTimestamp();
+        $invoice6->customer = 'cus_NeZwdNtLEOXuvB';
+        $invoice6->customer_name = 'Brendan Smith';
+
+        $invoice7 = new Invoice();
+        $invoice7->amount_paid = 1500;
+        $invoice7->currency = 'usd';
+        $invoice7->created = CarbonImmutable::parse('April 2rd, 2024 at 12PM UTC')->getTimestamp();
+        $invoice7->customer = 'cus_NeZwdNtLEOXuvB';
+        $invoice7->customer_name = 'Brendan Smith';
+
+        $dto = new ProductInvoiceAnalysisDTO('product_id', 'Product Name');
+        $dto->addInvoiceData($invoice1);
+        $dto->addInvoiceData($invoice2);
+        $dto->addInvoiceData($invoice3);
+        $dto->addInvoiceData($invoice4);
+        $dto->addInvoiceData($invoice5);
+        $dto->addInvoiceData($invoice6);
+        $dto->addInvoiceData($invoice7);
+
+        $outputArray = $dto->toArrayForTableDisplay();
+
+        $this->assertSame([
+            [
+                'Brendan Smith',
+                'Product Name',
+                2500,
+                3500,
+                1500,
+                7500,
+            ],
+            [
+                'Jane Doe',
+                'Product Name',
+                1000,
+                3000,
+                500,
+                4500,
+            ],
+            [
+                'Totals',
+                '',
+                2500,
+                1000,
+                1500,
+                3500,
+                3000,
+                500,
+                12000,
+            ],
+        ], $outputArray);
+    }
+}
