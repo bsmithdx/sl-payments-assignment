@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO\SubscriptionAnalysis;
 
 class CustomerInvoiceAnalysisDTO
@@ -29,7 +31,6 @@ class CustomerInvoiceAnalysisDTO
 
     public function addAmountForTimestamp(int $amount, int $timestamp): void
     {
-        //TODO: throw exception if $month is not between 1-12
         if (!isset($this->timestampTotals[$timestamp])) {
             $this->timestampTotals[$timestamp] = $amount;
         } else {

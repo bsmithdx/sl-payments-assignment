@@ -2,13 +2,23 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Stripe;
+namespace App\Services\SubscriptionAnalysis;
 
 use App\DTO\SubscriptionAnalysis\ProductInvoiceAnalysisDTO;
+use App\Services\Stripe\StripeCouponService;
+use App\Services\Stripe\StripeCustomerService;
+use App\Services\Stripe\StripeInvoiceService;
+use App\Services\Stripe\StripePriceService;
+use App\Services\Stripe\StripeProductService;
+use App\Services\Stripe\StripeSubscriptionService;
+use App\Services\Stripe\StripeTestClockService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
-use Stripe\Collection;
+use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Invoice;
+use Stripe\Price;
+use Stripe\Product;
 
 class SubscriptionAnalysisService
 {
@@ -19,6 +29,7 @@ class SubscriptionAnalysisService
         private readonly StripeCustomerService     $customerService,
         private readonly StripeSubscriptionService $subscriptionService,
         private readonly StripeTestClockService    $clockService,
+        private readonly StripeProductService      $productService,
         private readonly StripeInvoiceService      $invoiceService,
         private readonly CarbonImmutable           $startTime,
     )
@@ -39,6 +50,7 @@ class SubscriptionAnalysisService
             'monthly_crossclip_basic',
             'monthly_crossclip_premium',
         ]);
+        /** @var array<Price> $pricesByLookupKey */
         $pricesByLookupKey = [];
         foreach ($prices->data as $price) {
             $pricesByLookupKey[$price->lookup_key] = $price;
@@ -117,35 +129,52 @@ class SubscriptionAnalysisService
 
     /**
      * @throws ApiErrorException
+     * @return array<ProductInvoiceAnalysisDTO>
      */
     public function getAnalysisData(): array
     {
         //get all customers associated with the test clock
         $customers = $this->customerService->getAllCustomers($this->stripeTestClockId);
-        $customerEmailsById = [];
+        /** @var array<Customer> $customersById */
+        $customersById = [];
         foreach ($customers->data as $customer) {
-            $customerEmailsById[$customer->id] = $customer->email;
+            $customersById[$customer->id] = $customer;
         }
+        /** @var array<Invoice> $allInvoices */
+        $allInvoices = [];
         //apparently Stripe won't let you retrieve all invoices without providing a customerId so we'll have to loop through customers to get all invoices.
-        foreach ($customerEmailsById as $customerId => $customerEmail) {
-            $invoices = $this->invoiceService->getAllInvoicesForCustomer($customerId);
-            $productData = $this->transformProductDataFromStripeInvoices($invoices);
-            //TODO: combine invoices and process into all data necessary for table
+        foreach ($customersById as $customer) {
+            $allInvoices = array_merge($allInvoices, $this->invoiceService->getAllInvoicesForCustomer($customer->id)->data);
         }
-        return [];
+        return $this->transformProductDataFromStripeInvoices($allInvoices);
     }
 
-    private function transformProductDataFromStripeInvoices(Collection $invoices): array
+    /**
+     * @param array<Invoice> $invoices
+     * @return array<ProductInvoiceAnalysisDTO>
+     * @throws ApiErrorException
+     */
+    private function transformProductDataFromStripeInvoices(array $invoices): array
     {
+        /** @var array<ProductInvoiceAnalysisDTO> $productDTOs */
         $productDTOs = [];
-        foreach ($invoices->data as $invoice) {
-            //TODO: determine product id from invoice
-            $productId = '';
-            $productName = '';
-            if (!isset($productDTOs[$productId])) {
-                $productDTOs[$productId] = new ProductInvoiceAnalysisDTO($productId, $productName);
+        $products = $this->productService->getAllProducts();
+        /** @var array<Product> $productsById */
+        $productsById = [];
+        foreach ($products->data as $product) {
+            $productsById[$product->id] = $product;
+        }
+        foreach ($invoices as $invoice) {
+            //TODO: find less brittle way of getting product id from Invoice if possible
+            $currentProductId = $invoice?->lines?->first()?->price?->product;
+            if ($currentProductId) {
+                if (!isset($productDTOs[$currentProductId])) {
+                    $productDTOs[$currentProductId] = new ProductInvoiceAnalysisDTO($currentProductId, $productsById[$currentProductId]->name);
+                }
+                $productDTOs[$currentProductId]->addInvoiceData($invoice);
+            } else {
+                Log::debug("Could not get product id from Invoice: {$invoice->id}", ['invoice' => $invoice]);
             }
-            $productDTOs[$productId]->addInvoiceData($invoice);
         }
         return $productDTOs;
     }

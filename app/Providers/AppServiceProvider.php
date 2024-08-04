@@ -6,9 +6,10 @@ use App\Services\Stripe\StripeCouponService;
 use App\Services\Stripe\StripeCustomerService;
 use App\Services\Stripe\StripeInvoiceService;
 use App\Services\Stripe\StripePriceService;
+use App\Services\Stripe\StripeProductService;
 use App\Services\Stripe\StripeSubscriptionService;
 use App\Services\Stripe\StripeTestClockService;
-use App\Services\Stripe\SubscriptionAnalysisService;
+use App\Services\SubscriptionAnalysis\SubscriptionAnalysisService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
                 app(StripeCustomerService::class),
                 app(StripeSubscriptionService::class),
                 app(StripeTestClockService::class),
+                app(StripeProductService::class),
                 app(StripeInvoiceService::class),
                 CarbonImmutable::createFromTimestamp(config('services.stripe.subscription_analysis.start_time')),
             );

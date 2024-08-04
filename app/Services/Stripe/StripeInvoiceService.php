@@ -24,7 +24,7 @@ class StripeInvoiceService
         $params = [
             'limit' => 100,
             'customer' => $customerId,
-           //'expand' => 'price.product',
+            'status' => 'paid',
         ];
         return $this->client->invoices->all($params);
     }

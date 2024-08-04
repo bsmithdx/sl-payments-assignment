@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Services\Stripe\SubscriptionAnalysisService;
+use App\Services\SubscriptionAnalysis\SubscriptionAnalysisService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\ApiErrorException;
@@ -40,7 +40,6 @@ class GenerateSubscriptionAnalysis extends Command
 
             $this->info('Generating data for analysis');
             $data = $analysisService->getAnalysisData();
-
             $this->info('Displaying tables by product');
             $headers = [
               'Customer Email',

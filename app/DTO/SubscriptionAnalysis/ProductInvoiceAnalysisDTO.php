@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO\SubscriptionAnalysis;
 
 use Carbon\CarbonImmutable;
@@ -12,10 +14,28 @@ class ProductInvoiceAnalysisDTO
     private array $productTotalsByMonth = [];
     private int $productOverallTotal = 0;
     public function __construct(
-        public readonly string $productId,
-        public readonly string $productName,
+        private readonly string $productId,
+        private readonly string $productName,
     )
     {}
+    public function getProductName(): string
+    {
+        return $this->productName;
+    }
+    public function getCustomerData(): array
+    {
+        return $this->customerData;
+    }
+
+    public function getProductTotalsByMonth(): array
+    {
+        return $this->productTotalsByMonth;
+    }
+
+    public function getProductOverallTotal(): int
+    {
+        return $this->productOverallTotal;
+    }
 
     public function addInvoiceData(Invoice $invoice): void
     {
@@ -41,29 +61,5 @@ class ProductInvoiceAnalysisDTO
     {
         //TODO: handle currency conversion
         return $amount;
-    }
-
-    public function toArrayForTableDisplay(): array
-    {
-        //TODO: might need to handle adding empty months to fill out table if not present
-        $return = [];
-        //add one row to display data for each customer
-        /** @var CustomerInvoiceAnalysisDTO $customer */
-        foreach ($this->customerData as $customer) {
-            $customerMonthTotals = $customer->getMonthTotals();
-            //sort by key (timestamp of month's end) to ensure chronological order
-            ksort($customerMonthTotals);
-            $return[] = array_merge([$customer->customerName, $this->productName], $customer->getMonthTotals(), [$customer->getOverallTotal()]);
-        }
-        //add row to display product totals
-        $productMonthTotals = $this->productTotalsByMonth;
-        //sort by key (timestamp of month's end) to ensure chronological order
-        ksort($productMonthTotals);
-        $productTotalsRow = array_merge(['Totals', ''], $productMonthTotals);
-        $productTotalsRow[] = $this->productOverallTotal;
-        $return[] = $productTotalsRow;
-
-        return $return;
-
     }
 }

@@ -3,11 +3,12 @@
 namespace Tests\Feature;
 
 use App\DTO\SubscriptionAnalysis\ProductInvoiceAnalysisDTO;
+use App\Transformers\SubscriptionAnalysis\ProductInvoiceAnalysisTransformer;
 use Carbon\CarbonImmutable;
 use Stripe\Invoice;
 use Tests\TestCase;
 
-class ProductInvoiceAnalysisDTOTest extends TestCase
+class ProductInvoiceAnalysisTransformerTest extends TestCase
 {
     /**
      * A basic feature test example.
@@ -63,16 +64,19 @@ class ProductInvoiceAnalysisDTOTest extends TestCase
         $invoice7->customer = 'cus_NeZwdNtLEOXuvB';
         $invoice7->customer_name = 'Brendan Smith';
 
-        $dto = new ProductInvoiceAnalysisDTO('product_id', 'Product Name');
-        $dto->addInvoiceData($invoice1);
-        $dto->addInvoiceData($invoice2);
-        $dto->addInvoiceData($invoice3);
-        $dto->addInvoiceData($invoice4);
-        $dto->addInvoiceData($invoice5);
-        $dto->addInvoiceData($invoice6);
-        $dto->addInvoiceData($invoice7);
+        $data = new ProductInvoiceAnalysisDTO('product_id', 'Product Name');
+        $data->addInvoiceData($invoice1);
+        $data->addInvoiceData($invoice2);
+        $data->addInvoiceData($invoice3);
+        $data->addInvoiceData($invoice4);
+        $data->addInvoiceData($invoice5);
+        $data->addInvoiceData($invoice6);
+        $data->addInvoiceData($invoice7);
 
-        $outputArray = $dto->toArrayForTableDisplay();
+        /** @var ProductInvoiceAnalysisTransformer $transformer */
+        $transformer = app(ProductInvoiceAnalysisTransformer::class);
+
+        $outputArray = $transformer->transformDataToArrayForDisplay($data, 235423);
 
         $this->assertSame([
             [
