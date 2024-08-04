@@ -17,7 +17,7 @@ class ProductInvoiceAnalysisTransformer
             $customerMonthTotals = $customer->getMonthTotals();
             //sort by key (timestamp of month's end) to ensure chronological order
             ksort($customerMonthTotals);
-            $return[] = array_merge([$customer->customerName, $productData->getProductName()], $customer->getMonthTotals(), [$customer->getOverallTotal()]);
+            $return[] = array_merge([$customer->customerName, $productData->getProductName()], $customerMonthTotals, [$customer->getOverallTotal()]);
         }
         //add row to display product totals
         $productMonthTotals = $productData->getProductTotalsByMonth();

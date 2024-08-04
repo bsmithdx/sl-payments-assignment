@@ -83,8 +83,8 @@ class ProductInvoiceAnalysisTransformerTest extends TestCase
                 'Brendan Smith',
                 'Product Name',
                 2500,
-                3500,
                 1500,
+                3500,
                 7500,
             ],
             [
