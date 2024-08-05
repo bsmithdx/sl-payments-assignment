@@ -27,7 +27,10 @@ class GenerateSubscriptionAnalysis extends Command
      */
     protected $description = 'Run analysis on Stripe subscription data and produce a report showing projected revenue by product over 12 months';
 
-    public function __construct( private readonly CarbonImmutable $startTime)
+    public function __construct(
+        private readonly CarbonImmutable $startTime,
+        private readonly CarbonImmutable $endTime,
+    )
     {
         parent::__construct();
     }
@@ -41,7 +44,8 @@ class GenerateSubscriptionAnalysis extends Command
             $this->info('Adding new Customer and Subscription data to Stripe');
             $analysisService->addDataToStripeBeforeAnalysis();
 
-            $this->info('Advancing the Stripe Clock through the simulation');
+            $this->info("Advancing the Stripe Clock through the simulation ({$this->startTime->toDateTimeString()} -> {$this->endTime->toDateTimeString()})");
+            $this->info('This usually takes about 4 minutes...');
             $analysisService->runAnalysis();
 
             $this->info('Generating data for analysis');
@@ -49,21 +53,21 @@ class GenerateSubscriptionAnalysis extends Command
 
             $this->info('Displaying tables by product');
             $headers = [
-              'Customer Email',
-              'Product Name',
-              'Month 1',
-              'Month 2',
-              'Month 3',
-              'Month 4',
-              'Month 5',
-              'Month 6',
-              'Month 7',
-              'Month 8',
-              'Month 9',
-              'Month 10',
-              'Month 11',
-              'Month 12',
-              'Life Time Value',
+                'Customer Email',
+                'Product Name',
+                $this->startTime->getTranslatedMonthName(),
+                $this->startTime->addMonths(1)->getTranslatedMonthName(),
+                $this->startTime->addMonths(2)->getTranslatedMonthName(),
+                $this->startTime->addMonths(3)->getTranslatedMonthName(),
+                $this->startTime->addMonths(4)->getTranslatedMonthName(),
+                $this->startTime->addMonths(5)->getTranslatedMonthName(),
+                $this->startTime->addMonths(6)->getTranslatedMonthName(),
+                $this->startTime->addMonths(7)->getTranslatedMonthName(),
+                $this->startTime->addMonths(8)->getTranslatedMonthName(),
+                $this->startTime->addMonths(9)->getTranslatedMonthName(),
+                $this->startTime->addMonths(10)->getTranslatedMonthName(),
+                $this->startTime->addMonths(11)->getTranslatedMonthName(),
+                'Life Time Value',
             ];
 
             foreach ($productData as $productDatum) {

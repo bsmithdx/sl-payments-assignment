@@ -32,6 +32,7 @@ class SubscriptionAnalysisService
         private readonly StripeProductService      $productService,
         private readonly StripeInvoiceService      $invoiceService,
         private readonly CarbonImmutable           $startTime,
+        private readonly CarbonImmutable           $endTime,
     )
     {
         $testClock = $this->clockService->getAllClocks()->first();
@@ -115,8 +116,7 @@ class SubscriptionAnalysisService
     public function runAnalysis(): void
     {
         $newClockTime = $this->startTime;
-        $endClockTime = $this->startTime->addMonths(11)->endOfMonth();
-        while ($newClockTime < $endClockTime) {
+        while ($newClockTime < $this->endTime) {
             $newClockTime = $newClockTime->addMonth();
             $clock = $this->clockService->advanceClockAndPollUntilReady($this->stripeTestClockId, $newClockTime);
             Log::info("Advanced Stripe Time Clock: {$clock->name} ({$clock->id})", [
