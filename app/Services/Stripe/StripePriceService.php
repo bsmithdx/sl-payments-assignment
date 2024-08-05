@@ -6,7 +6,6 @@ namespace App\Services\Stripe;
 
 use Stripe\Collection;
 use Stripe\Exception\ApiErrorException;
-use Stripe\Price;
 use Stripe\StripeClient;
 
 class StripePriceService
